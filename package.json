@@ -1,0 +1,34 @@
+{
+  "name": "injectree",
+  "version": "0.1.0",
+  "description": "Simple dependency injection library.",
+  "keywords": ["dependency injection", "injector", "di", "ioc"],
+  "homepage": "https://github.com/ksz-ksz/injectree",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ksz-ksz/injectree"
+  },
+  "bugs": {
+    "url": "https://github.com/ksz-ksz/injectree/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "ksz ksz",
+    "url": "https://github.com/ksz-ksz"
+  },
+  "files": [
+    "dist/"
+  ],
+  "main": "dist/main/index.js",
+  "module": "dist/module/index.js",
+  "types": "dist/main/index.d.ts",
+  "scripts": {
+    "build": "run-s build:**",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:module": "tsc -p tsconfig.module.json"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "typescript": "^4.2.2"
+  }
+}
