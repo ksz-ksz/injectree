@@ -1,0 +1,142 @@
+import {
+  getDefaultProvider,
+  isClassProvider,
+  isFactoryProvider,
+  isValueProvider,
+  Provider,
+  ProviderBinding,
+} from './provider';
+import { Token } from './token';
+import { InjectionOpts } from './injection-opts';
+import { dep, Deps, DepWithOpts } from './deps';
+import { isPlainObject } from 'is-plain-object';
+import { ResolvePath } from './resolve-path';
+import { CyclicDepsError, MissingProviderError } from './errors';
+
+function missingProvider(
+  path: ResolvePath,
+  token: Token<unknown>,
+  optional: boolean
+) {
+  if (optional) {
+    return undefined;
+  } else {
+    throw new MissingProviderError(path, token);
+  }
+}
+
+function checkCycle<T>(path: ResolvePath, token: Token<T>, injector: Injector) {
+  const index = path.findIndex(
+    (x) => x.token === token && x.injector === injector
+  );
+  if (index !== -1) {
+    throw new CyclicDepsError(path.slice(0, index), [
+      ...path.slice(index),
+      { token, injector: injector },
+    ]);
+  }
+}
+
+export class Injector {
+  readonly depth: number;
+  private readonly providers = new Map<Token<unknown>, Provider<unknown>>();
+  private readonly bindings = new Map<Token<unknown>, unknown>();
+
+  constructor(
+    providers: ProviderBinding<unknown>[] = [],
+    private readonly parent?: Injector
+  ) {
+    this.depth = this.parent !== undefined ? this.parent.depth + 1 : 0;
+    this.bindings.set(Injector, this);
+    for (const provider of providers) {
+      this.providers.set(provider.token, provider.provider);
+    }
+  }
+
+  get<T>(token: Token<T>): T;
+  get<T>(token: Token<T>, opts: InjectionOpts & { optional?: false }): T;
+  get<T>(
+    token: Token<T>,
+    opts: InjectionOpts & { optional: true }
+  ): T | undefined;
+  get<T>(token: Token<T>, opts: InjectionOpts): T | undefined;
+  get<T>(token: Token<T>, opts: InjectionOpts = {}): T | undefined {
+    return this.resolve(token, opts, []);
+  }
+
+  private resolve<T>(
+    token: Token<T>,
+    { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
+    path: ResolvePath
+  ): T | undefined {
+    checkCycle(path, token, this);
+    if (from === 'ancestors') {
+      if (this.parent !== undefined) {
+        return this.parent.resolve(token, { optional }, path);
+      } else {
+        return missingProvider(path, token, optional);
+      }
+    } else {
+      const instance = this.bindings.get(token) as T | undefined;
+      if (instance !== undefined) {
+        return instance;
+      } else {
+        const provider = this.getProvider(token);
+        if (provider !== undefined) {
+          return this.bindInstance(token, provider, path);
+        } else if (from !== 'self') {
+          if (this.parent !== undefined) {
+            return this.parent.resolve(token, { optional }, path);
+          } else {
+            const defaultProvider = getDefaultProvider(token);
+            if (defaultProvider !== undefined) {
+              return this.bindInstance(token, defaultProvider, path);
+            } else {
+              return missingProvider(path, token, optional);
+            }
+          }
+        } else {
+          return missingProvider(path, token, optional);
+        }
+      }
+    }
+  }
+
+  private getProvider<T>(token: Token<T>): Provider<T> | undefined {
+    return this.providers.get(token) as Provider<T> | undefined;
+  }
+
+  private bindInstance<T>(
+    token: Token<T>,
+    provider: Provider<T>,
+    path: ResolvePath
+  ): T {
+    const instance = this.createInstance(provider, [
+      ...path,
+      { token, injector: this },
+    ]);
+    this.bindings.set(token, instance);
+    return instance;
+  }
+
+  private createInstance<T>(provider: Provider<T>, path: ResolvePath): T {
+    if (isValueProvider(provider)) {
+      return provider.value;
+    } else if (isFactoryProvider(provider)) {
+      const deps = this.resolveDeps(provider.deps, path);
+      return provider.factory(...deps);
+    } else if (isClassProvider(provider)) {
+      const deps = this.resolveDeps(provider.deps, path);
+      return new provider.class(...deps);
+    } else {
+      throw new Error();
+    }
+  }
+
+  private resolveDeps(_deps: Deps<unknown[]>, chain: ResolvePath): unknown[] {
+    const deps = _deps.map((x) =>
+      isPlainObject(x) ? (x as DepWithOpts<unknown>) : dep(x as Token<unknown>)
+    );
+    return deps.map(({ token, opts }) => this.resolve(token, opts, chain));
+  }
+}
