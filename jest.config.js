@@ -5,7 +5,7 @@ module.exports = {
   ...(process.env.CI
     ? {
         collectCoverage: true,
-        coverageReporters: ['json'],
+        coverageReporters: ['lcov'],
       }
     : {}),
 };
