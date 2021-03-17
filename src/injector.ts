@@ -8,8 +8,7 @@ import {
 } from './provider';
 import { Token } from './token';
 import { InjectionOpts } from './injection-opts';
-import { dep, Deps, DepWithOpts } from './deps';
-import { isPlainObject } from 'is-plain-object';
+import { dep, Deps, isDepWithOpts } from './deps';
 import { ResolvePath } from './resolve-path';
 import { CyclicDepsError, MissingProviderError } from './errors';
 
@@ -133,10 +132,10 @@ export class Injector {
     }
   }
 
-  private resolveDeps(_deps: Deps<unknown[]>, chain: ResolvePath): unknown[] {
-    const deps = _deps.map((x) =>
-      isPlainObject(x) ? (x as DepWithOpts<unknown>) : dep(x as Token<unknown>)
-    );
-    return deps.map(({ token, opts }) => this.resolve(token, opts, chain));
+  private resolveDeps(deps: Deps<unknown[]>, chain: ResolvePath): unknown[] {
+    return deps.map((x) => {
+      const { token, opts } = isDepWithOpts(x) ? x : dep(x);
+      return this.resolve(token, opts, chain);
+    });
   }
 }

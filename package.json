@@ -2,7 +2,12 @@
   "name": "injectree",
   "version": "0.1.0",
   "description": "Simple dependency injection library.",
-  "keywords": ["dependency injection", "injector", "di", "ioc"],
+  "keywords": [
+    "dependency injection",
+    "injector",
+    "di",
+    "ioc"
+  ],
   "homepage": "https://github.com/ksz-ksz/injectree",
   "repository": {
     "type": "git",
@@ -23,12 +28,19 @@
   "module": "dist/module/index.js",
   "types": "dist/main/index.d.ts",
   "scripts": {
+    "lint": "eslint **/*.{js,ts} --quiet",
     "build": "run-s build:**",
     "build:main": "tsc -p tsconfig.main.json",
     "build:module": "tsc -p tsconfig.module.json"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.18.0",
+    "@typescript-eslint/parser": "^4.18.0",
+    "eslint": "^7.22.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-prettier": "^3.3.1",
     "npm-run-all": "^4.1.5",
+    "prettier": "^2.2.1",
     "typescript": "^4.2.2"
   }
 }

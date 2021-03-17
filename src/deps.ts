@@ -18,3 +18,7 @@ export function dep<T>(
 ): DepWithOpts<T> {
   return { token, opts };
 }
+
+export function isDepWithOpts<T>(x: Dep<T>): x is DepWithOpts<T> {
+  return 'opts' in x;
+}
