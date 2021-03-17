@@ -16,7 +16,7 @@ function missingProvider(
   path: ResolvePath,
   token: Token<unknown>,
   optional: boolean
-) {
+): undefined {
   if (optional) {
     return undefined;
   } else {
@@ -24,7 +24,11 @@ function missingProvider(
   }
 }
 
-function checkCycle<T>(path: ResolvePath, token: Token<T>, injector: Injector) {
+function checkCycle<T>(
+  path: ResolvePath,
+  token: Token<T>,
+  injector: Injector
+): void {
   const index = path.findIndex(
     (x) => x.token === token && x.injector === injector
   );

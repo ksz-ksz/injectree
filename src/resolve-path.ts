@@ -8,6 +8,6 @@ interface ResolvePathItem {
 
 export type ResolvePath = ResolvePathItem[];
 
-export function formatResolvePath(chain: ResolvePath) {
+export function formatResolvePath(chain: ResolvePath): string {
   return chain.map((x) => `${x.token.name}@${x.injector.depth}`).join(' → ');
 }

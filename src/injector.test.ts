@@ -183,7 +183,7 @@ describe('Injector', () => {
       const token = new NamedToken('test');
       const injector = new Injector();
 
-      const e = () => {
+      const e = (): void => {
         // when
         injector.get(token);
       };
@@ -262,7 +262,7 @@ describe('Injector', () => {
         ]);
         const injector = new Injector([], parentInjector);
         defaultProvider(token, { value: 'DEFAULT' });
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(token, { from: 'self' });
         };
@@ -418,7 +418,7 @@ describe('Injector', () => {
           parentInjector
         );
 
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(Service, { from: 'ancestors' });
         };
@@ -454,7 +454,7 @@ describe('Injector', () => {
         defaultProvider(token, { value: 'DEFAULT' });
         const injector = new Injector([provider(token, { value: 'SELF' })]);
 
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(token, { from: 'ancestors' });
         };
@@ -511,7 +511,7 @@ describe('Injector', () => {
           provider(Service, { deps: [depToken] }),
         ]);
 
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(Service);
         };
@@ -579,7 +579,7 @@ describe('Injector', () => {
             parentInjector
           );
 
-          const e = () => {
+          const e = (): void => {
             // when
             injector.get(Service);
           };
@@ -675,7 +675,7 @@ describe('Injector', () => {
             provider(Service, { deps: [dep(depToken, { from: 'ancestors' })] }),
           ]);
 
-          const e = () => {
+          const e = (): void => {
             // when
             injector.get(Service);
           };
@@ -723,7 +723,7 @@ describe('Injector', () => {
             parentInjector
           );
 
-          const e = () => {
+          const e = (): void => {
             // when
             injector.get(Service);
           };
@@ -766,7 +766,7 @@ describe('Injector', () => {
         }
         const injector = new Injector([provider(Service, { deps: [Service] })]);
 
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(Service);
         };
@@ -793,7 +793,7 @@ describe('Injector', () => {
           provider(C, { deps: [A] }),
         ]);
 
-        const e = () => {
+        const e = (): void => {
           // when
           injector.get(A);
         };
@@ -829,7 +829,7 @@ describe('Injector', () => {
             provider(C, { deps: [A] }),
           ]);
 
-          const e = () => {
+          const e = (): void => {
             // when
             injector.get(X);
           };

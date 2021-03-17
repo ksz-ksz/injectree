@@ -2,6 +2,8 @@ import { Class } from './class';
 import { ClassToken, NamedToken, Token } from './token';
 import { Deps } from './deps';
 
+export interface Provider<T> {}
+
 export interface ValueProvider<T> extends Provider<T> {
   value: T;
 }
@@ -16,13 +18,14 @@ export interface ClassProvider<T, D extends unknown[]> extends Provider<T> {
   class: Class<T, D>;
 }
 
-// @ts-ignore
 export interface ImplicitClassProvider<T, D extends unknown[]> {
   deps: Deps<D>;
 }
 
-// @ts-ignore
-export interface Provider<T> {}
+export interface ProviderBinding<T> {
+  token: Token<T>;
+  provider: Provider<T>;
+}
 
 export interface ValueProviderBinding<T> extends ProviderBinding<T> {
   token: Token<T>;
@@ -39,11 +42,6 @@ export interface FactoryProviderBinding<T, D extends unknown[]>
   extends ProviderBinding<T> {
   token: Token<T>;
   provider: FactoryProvider<T, D>;
-}
-
-export interface ProviderBinding<T> {
-  token: Token<T>;
-  provider: Provider<T>;
 }
 
 export function isValueProvider<T>(

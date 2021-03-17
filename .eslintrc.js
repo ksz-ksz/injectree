@@ -15,6 +15,9 @@ module.exports = {
       extends: [
         'plugin:@typescript-eslint/recommended-requiring-type-checking',
       ],
+      rules: {
+        '@typescript-eslint/explicit-function-return-type': 'error',
+      },
     },
   ],
   ignorePatterns: ['node_modules/', 'dist/'],
