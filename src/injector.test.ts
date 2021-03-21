@@ -253,6 +253,18 @@ describe('Injector', () => {
       // then
       expect(instance).toBe('SELF');
     });
+    describe('root injector and default provider', () => {
+      // given
+      const token = new NamedToken('test');
+      const injector = new Injector();
+      defaultProvider(token, { value: 'DEFAULT' });
+
+      // when
+      const instance = injector.get(token, { from: 'self' });
+
+      // then
+      expect(instance).toBe('DEFAULT');
+    });
     describe('provider missing in self', () => {
       it('should throw', () => {
         // given
@@ -562,6 +574,26 @@ describe('Injector', () => {
 
         // then
         expect(instance.dep).toBe('SELF_DEP');
+      });
+      describe('root injector with default provider', () => {
+        it('should resolve', () => {
+          // given
+          class Service {
+            constructor(readonly dep: string) {}
+          }
+
+          const depToken = new NamedToken<string>('dep');
+          defaultProvider(depToken, { value: 'DEFAULT_DEP' });
+          const injector = new Injector([
+            provider(Service, { deps: [dep(depToken, { from: 'self' })] }),
+          ]);
+
+          // when
+          const instance = injector.get(Service);
+
+          // then
+          expect(instance.dep).toBe('DEFAULT_DEP');
+        });
       });
       describe('missing dep provider', () => {
         it('should throw', () => {

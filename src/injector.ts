@@ -62,7 +62,6 @@ export class Injector {
     token: Token<T>,
     opts: InjectionOpts & { optional: true }
   ): T | undefined;
-  get<T>(token: Token<T>, opts: InjectionOpts): T | undefined;
   get<T>(token: Token<T>, opts: InjectionOpts = {}): T | undefined {
     return this.resolve(token, opts, []);
   }
@@ -97,6 +96,13 @@ export class Injector {
             } else {
               return missingProvider(path, token, optional);
             }
+          }
+        } else if (/* from === 'self' && */ this.depth === 0) {
+          const defaultProvider = getDefaultProvider(token);
+          if (defaultProvider !== undefined) {
+            return this.bindInstance(token, defaultProvider, path);
+          } else {
+            return missingProvider(path, token, optional);
           }
         } else {
           return missingProvider(path, token, optional);
