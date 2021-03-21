@@ -6,7 +6,7 @@ import {
   Provider,
   ProviderBinding,
 } from './provider';
-import { Token } from './token';
+import { InjectionToken } from './token';
 import { InjectionOpts } from './injection-opts';
 import { dep, Deps, isDepWithOpts } from './deps';
 import { ResolvePath } from './resolve-path';
@@ -14,7 +14,7 @@ import { CyclicDepsError, MissingProviderError } from './errors';
 
 function missingProvider(
   path: ResolvePath,
-  token: Token<unknown>,
+  token: InjectionToken<unknown>,
   optional: boolean
 ): undefined {
   if (optional) {
@@ -26,7 +26,7 @@ function missingProvider(
 
 function checkCycle<T>(
   path: ResolvePath,
-  token: Token<T>,
+  token: InjectionToken<T>,
   injector: Injector
 ): void {
   const index = path.findIndex(
@@ -42,8 +42,11 @@ function checkCycle<T>(
 
 export class Injector {
   readonly depth: number;
-  private readonly providers = new Map<Token<unknown>, Provider<unknown>>();
-  private readonly bindings = new Map<Token<unknown>, unknown>();
+  private readonly providers = new Map<
+    InjectionToken<unknown>,
+    Provider<unknown>
+  >();
+  private readonly bindings = new Map<InjectionToken<unknown>, unknown>();
 
   constructor(
     providers: ProviderBinding<unknown>[] = [],
@@ -56,18 +59,21 @@ export class Injector {
     }
   }
 
-  get<T>(token: Token<T>): T;
-  get<T>(token: Token<T>, opts: InjectionOpts & { optional?: false }): T;
+  get<T>(token: InjectionToken<T>): T;
   get<T>(
-    token: Token<T>,
+    token: InjectionToken<T>,
+    opts: InjectionOpts & { optional?: false }
+  ): T;
+  get<T>(
+    token: InjectionToken<T>,
     opts: InjectionOpts & { optional: true }
   ): T | undefined;
-  get<T>(token: Token<T>, opts: InjectionOpts = {}): T | undefined {
+  get<T>(token: InjectionToken<T>, opts: InjectionOpts = {}): T | undefined {
     return this.resolve(token, opts, []);
   }
 
   private resolve<T>(
-    token: Token<T>,
+    token: InjectionToken<T>,
     { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
     path: ResolvePath
   ): T | undefined {
@@ -111,12 +117,12 @@ export class Injector {
     }
   }
 
-  private getProvider<T>(token: Token<T>): Provider<T> | undefined {
+  private getProvider<T>(token: InjectionToken<T>): Provider<T> | undefined {
     return this.providers.get(token) as Provider<T> | undefined;
   }
 
   private bindInstance<T>(
-    token: Token<T>,
+    token: InjectionToken<T>,
     provider: Provider<T>,
     path: ResolvePath
   ): T {

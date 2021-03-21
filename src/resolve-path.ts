@@ -1,8 +1,8 @@
-import { Token } from './token';
+import { InjectionToken } from './token';
 import { Injector } from './injector';
 
 interface ResolvePathItem {
-  token: Token<unknown>;
+  token: InjectionToken<unknown>;
   injector: Injector;
 }
 

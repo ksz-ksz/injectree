@@ -1,5 +1,5 @@
 import { Injector } from './injector';
-import { NamedToken } from './token';
+import { Token } from './token';
 import { defaultProvider, provider } from './provider';
 import { dep } from './deps';
 
@@ -7,7 +7,7 @@ describe('Injector', () => {
   describe('value provider', () => {
     it('should resolve', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const injector = new Injector([provider(token, { value: 'RESOLVED' })]);
 
       // when
@@ -21,7 +21,7 @@ describe('Injector', () => {
   describe('factory provider', () => {
     it('should resolve', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const injector = new Injector([
         provider(token, { factory: () => 'RESOLVED', deps: [] }),
       ]);
@@ -35,9 +35,9 @@ describe('Injector', () => {
     describe('with deps', () => {
       it('should resolve', () => {
         // given
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
-        const token = new NamedToken('test');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
+        const token = new Token('test');
         const injector = new Injector([
           provider(dep1Token, { value: 'DEP1' }),
           provider(token, {
@@ -74,8 +74,8 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         const injector = new Injector([
           provider(dep1Token, { value: 'DEP1' }),
           provider(Service, {
@@ -118,8 +118,8 @@ describe('Injector', () => {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
         class Service extends AbstractService {}
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         const injector = new Injector([
           provider(dep1Token, { value: 'DEP1' }),
           provider(AbstractService, {
@@ -158,8 +158,8 @@ describe('Injector', () => {
     describe('with deps', () => {
       it('should resolve', () => {
         // given
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         class Service {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
@@ -180,7 +180,7 @@ describe('Injector', () => {
   describe('missing provider', () => {
     it('should throw', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const injector = new Injector();
 
       const e = (): void => {
@@ -194,7 +194,7 @@ describe('Injector', () => {
     describe('optional', () => {
       it('should return undefined', () => {
         // given
-        const token = new NamedToken('test');
+        const token = new Token('test');
         const injector = new Injector();
 
         // when
@@ -237,7 +237,7 @@ describe('Injector', () => {
   describe('from self', () => {
     it('should resolve', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const parentInjector = new Injector([
         provider(token, { value: 'PARENT' }),
       ]);
@@ -255,7 +255,7 @@ describe('Injector', () => {
     });
     describe('root injector and default provider', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const injector = new Injector();
       defaultProvider(token, { value: 'DEFAULT' });
 
@@ -268,7 +268,7 @@ describe('Injector', () => {
     describe('provider missing in self', () => {
       it('should throw', () => {
         // given
-        const token = new NamedToken('test');
+        const token = new Token('test');
         const parentInjector = new Injector([
           provider(token, { value: 'PARENT' }),
         ]);
@@ -285,7 +285,7 @@ describe('Injector', () => {
       describe('optional', () => {
         it('should return undefined', () => {
           // given
-          const token = new NamedToken('test');
+          const token = new Token('test');
           const parentInjector = new Injector([
             provider(token, { value: 'PARENT' }),
           ]);
@@ -309,8 +309,8 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         const parentInjector = new Injector([
           provider(dep1Token, { value: 'DEP1' }),
         ]);
@@ -341,7 +341,7 @@ describe('Injector', () => {
   describe('from ancestors', () => {
     it('should resolve', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       const parentInjector = new Injector([
         provider(token, { value: 'PARENT' }),
       ]);
@@ -358,7 +358,7 @@ describe('Injector', () => {
     });
     it('should resolve from default', () => {
       // given
-      const token = new NamedToken('test');
+      const token = new Token('test');
       defaultProvider(token, { value: 'DEFAULT' });
       const parentInjector = new Injector([]);
       const injector = new Injector(
@@ -378,8 +378,8 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         const parentInjector = new Injector([
           provider(dep1Token, { value: 'PARENT_DEP1' }),
           provider(Service, {
@@ -412,8 +412,8 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep1: string, readonly dep2: string) {}
         }
-        const dep1Token = new NamedToken<string>('dep1');
-        const dep2Token = new NamedToken<string>('dep2');
+        const dep1Token = new Token<string>('dep1');
+        const dep2Token = new Token<string>('dep2');
         const parentInjector = new Injector([
           provider(Service, {
             deps: [dep1Token, dep2Token],
@@ -442,7 +442,7 @@ describe('Injector', () => {
     describe('existing binding in self', () => {
       it('should resolve to parent', () => {
         // given
-        const token = new NamedToken('test');
+        const token = new Token('test');
         const parentInjector = new Injector([
           provider(token, { value: 'PARENT' }),
         ]);
@@ -462,7 +462,7 @@ describe('Injector', () => {
     describe('missing parent', () => {
       it('should throw', () => {
         // given
-        const token = new NamedToken('test');
+        const token = new Token('test');
         defaultProvider(token, { value: 'DEFAULT' });
         const injector = new Injector([provider(token, { value: 'SELF' })]);
 
@@ -477,7 +477,7 @@ describe('Injector', () => {
       describe('optional', () => {
         it('should throw', () => {
           // given
-          const token = new NamedToken('test');
+          const token = new Token('test');
           defaultProvider(token, { value: 'DEFAULT' });
           const injector = new Injector([provider(token, { value: 'SELF' })]);
 
@@ -500,7 +500,7 @@ describe('Injector', () => {
       class Service {
         constructor(readonly dep: string) {}
       }
-      const depToken = new NamedToken<string>('dep');
+      const depToken = new Token<string>('dep');
       const injector = new Injector([
         provider(Service, { deps: [depToken] }),
         provider(depToken, { value: 'DEP' }),
@@ -518,7 +518,7 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep: string) {}
         }
-        const depToken = new NamedToken<string>('dep');
+        const depToken = new Token<string>('dep');
         const injector = new Injector([
           provider(Service, { deps: [depToken] }),
         ]);
@@ -537,7 +537,7 @@ describe('Injector', () => {
           class Service {
             constructor(readonly dep: string) {}
           }
-          const depToken = new NamedToken<string>('dep');
+          const depToken = new Token<string>('dep');
           const injector = new Injector([
             provider(Service, { deps: [dep(depToken, { optional: true })] }),
           ]);
@@ -556,7 +556,7 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep: string) {}
         }
-        const depToken = new NamedToken<string>('dep');
+        const depToken = new Token<string>('dep');
         defaultProvider(depToken, { value: 'DEFAULT_DEP' });
         const parentInjector = new Injector([
           provider(depToken, { value: 'PARENT_DEP' }),
@@ -582,7 +582,7 @@ describe('Injector', () => {
             constructor(readonly dep: string) {}
           }
 
-          const depToken = new NamedToken<string>('dep');
+          const depToken = new Token<string>('dep');
           defaultProvider(depToken, { value: 'DEFAULT_DEP' });
           const injector = new Injector([
             provider(Service, { deps: [dep(depToken, { from: 'self' })] }),
@@ -601,7 +601,7 @@ describe('Injector', () => {
           class Service {
             constructor(readonly dep: string) {}
           }
-          const depToken = new NamedToken<string>('dep');
+          const depToken = new Token<string>('dep');
           defaultProvider(depToken, { value: 'DEFAULT_DEP' });
           const parentInjector = new Injector([
             provider(depToken, { value: 'PARENT_DEP' }),
@@ -625,7 +625,7 @@ describe('Injector', () => {
             class Service {
               constructor(readonly dep: string) {}
             }
-            const depToken = new NamedToken<string>('dep');
+            const depToken = new Token<string>('dep');
             defaultProvider(depToken, { value: 'DEFAULT_DEP' });
             const parentInjector = new Injector([
               provider(depToken, { value: 'PARENT_DEP' }),
@@ -654,7 +654,7 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep: string) {}
         }
-        const depToken = new NamedToken<string>('dep');
+        const depToken = new Token<string>('dep');
         defaultProvider(depToken, { value: 'DEFAULT_DEP' });
         const parentInjector = new Injector([
           provider(depToken, { value: 'PARENT_DEP' }),
@@ -678,7 +678,7 @@ describe('Injector', () => {
         class Service {
           constructor(readonly dep: string) {}
         }
-        const depToken = new NamedToken<string>('dep');
+        const depToken = new Token<string>('dep');
         defaultProvider(depToken, { value: 'DEFAULT_DEP' });
         const parentInjector = new Injector([]);
         const injector = new Injector(
@@ -701,7 +701,7 @@ describe('Injector', () => {
           class Service {
             constructor(readonly dep: string) {}
           }
-          const depToken = new NamedToken<string>('dep');
+          const depToken = new Token<string>('dep');
           defaultProvider(depToken, { value: 'DEFAULT_DEP' });
           const injector = new Injector([
             provider(Service, { deps: [dep(depToken, { from: 'ancestors' })] }),
@@ -721,7 +721,7 @@ describe('Injector', () => {
             class Service {
               constructor(readonly dep: string) {}
             }
-            const depToken = new NamedToken<string>('dep');
+            const depToken = new Token<string>('dep');
             defaultProvider(depToken, { value: 'DEFAULT_DEP' });
             const injector = new Injector([
               provider(Service, {
@@ -743,7 +743,7 @@ describe('Injector', () => {
           class Service {
             constructor(readonly dep: string) {}
           }
-          const depToken = new NamedToken<string>('dep');
+          const depToken = new Token<string>('dep');
           const parentInjector = new Injector([]);
           const injector = new Injector(
             [
@@ -769,7 +769,7 @@ describe('Injector', () => {
             class Service {
               constructor(readonly dep: string) {}
             }
-            const depToken = new NamedToken<string>('dep');
+            const depToken = new Token<string>('dep');
             const parentInjector = new Injector([]);
             const injector = new Injector(
               [

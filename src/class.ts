@@ -1,8 +1,8 @@
-export interface AbstractClass<T> extends Function {
+export interface Class<T> extends Function {
   prototype: T;
 }
 
-export interface Class<T, ARGS extends unknown[] = unknown[]>
-  extends AbstractClass<T> {
+export interface ClassConstructor<T, ARGS extends unknown[] = unknown[]>
+  extends Class<T> {
   new (...args: ARGS): T;
 }

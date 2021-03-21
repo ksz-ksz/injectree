@@ -1,8 +1,11 @@
 import { formatResolvePath, ResolvePath } from './resolve-path';
-import { Token } from './token';
+import { InjectionToken } from './token';
 
 export class MissingProviderError extends Error {
-  constructor(readonly path: ResolvePath, readonly token: Token<unknown>) {
+  constructor(
+    readonly path: ResolvePath,
+    readonly token: InjectionToken<unknown>
+  ) {
     super(
       `missing provider:${
         path.length ? ` [${formatResolvePath(path)}] ` : ' '

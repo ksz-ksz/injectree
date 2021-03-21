@@ -1,4 +1,4 @@
-export { AbstractClass, Class } from './class';
+export { Class, ClassConstructor } from './class';
 export { dep, DepWithOpts, Dep, Deps } from './deps';
 export { MissingProviderError, CyclicDepsError } from './errors';
 export { InjectionOpts } from './injection-opts';
@@ -20,4 +20,4 @@ export {
   ImplicitClassProvider,
 } from './provider';
 export { ResolvePath } from './resolve-path';
-export { NamedToken, Token, ClassToken } from './token';
+export { Token, InjectionToken } from './token';

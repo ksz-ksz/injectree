@@ -1,11 +1,13 @@
-import { AbstractClass } from './class';
+import { Class } from './class';
 
-export class NamedToken<T> {
+declare const TOKEN: unique symbol;
+
+export class Token<T> {
   constructor(readonly name: string) {}
 }
-export interface NamedToken<T> {
-  __TYPE__: T;
+
+export interface Token<T> {
+  [TOKEN]: T;
 }
 
-export type ClassToken<T> = AbstractClass<T>;
-export type Token<T> = NamedToken<T> | ClassToken<T>;
+export type InjectionToken<T> = Token<T> | Class<T>;

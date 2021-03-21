@@ -1,19 +1,19 @@
-import { Token } from './token';
+import { InjectionToken } from './token';
 import { InjectionOpts } from './injection-opts';
 
 export interface DepWithOpts<T> {
-  token: Token<T>;
+  token: InjectionToken<T>;
   opts: InjectionOpts;
 }
 
-export type Dep<T> = Token<T> | DepWithOpts<T>;
+export type Dep<T> = InjectionToken<T> | DepWithOpts<T>;
 
 export type Deps<D extends unknown[]> = {
   [index in keyof D]: Dep<D[index]>;
 };
 
 export function dep<T>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   opts: InjectionOpts = {}
 ): DepWithOpts<T> {
   return { token, opts };

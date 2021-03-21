@@ -1,5 +1,5 @@
-import { Class } from './class';
-import { ClassToken, NamedToken, Token } from './token';
+import { Class, ClassConstructor } from './class';
+import { Token, InjectionToken } from './token';
 import { Deps } from './deps';
 
 export interface Provider<T> {}
@@ -15,7 +15,7 @@ export interface FactoryProvider<T, D extends unknown[]> extends Provider<T> {
 
 export interface ClassProvider<T, D extends unknown[]> extends Provider<T> {
   deps: Deps<D>;
-  class: Class<T, D>;
+  class: ClassConstructor<T, D>;
 }
 
 export interface ImplicitClassProvider<T, D extends unknown[]> {
@@ -23,24 +23,24 @@ export interface ImplicitClassProvider<T, D extends unknown[]> {
 }
 
 export interface ProviderBinding<T> {
-  token: Token<T>;
+  token: InjectionToken<T>;
   provider: Provider<T>;
 }
 
 export interface ValueProviderBinding<T> extends ProviderBinding<T> {
-  token: Token<T>;
+  token: InjectionToken<T>;
   provider: ValueProvider<T>;
 }
 
 export interface ClassProviderBinding<T, D extends unknown[]>
   extends ProviderBinding<T> {
-  token: Class<T, D>;
+  token: ClassConstructor<T, D>;
   provider: ClassProvider<T, D>;
 }
 
 export interface FactoryProviderBinding<T, D extends unknown[]>
   extends ProviderBinding<T> {
-  token: Token<T>;
+  token: InjectionToken<T>;
   provider: FactoryProvider<T, D>;
 }
 
@@ -62,10 +62,10 @@ export function isClassProvider<T>(
   return 'class' in provider;
 }
 
-const DEFAULT_PROVIDERS = new Map<Token<unknown>, Provider<unknown>>();
+const DEFAULT_PROVIDERS = new Map<InjectionToken<unknown>, Provider<unknown>>();
 
 function getProvider<T>(
-  token: NamedToken<T> | ClassToken<T>,
+  token: Token<T> | Class<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): Provider<T> {
   if ('value' in provider || 'factory' in provider || 'class' in provider) {
@@ -73,29 +73,29 @@ function getProvider<T>(
   } else {
     return {
       ...provider,
-      class: token as Class<T>,
+      class: token as ClassConstructor<T>,
     };
   }
 }
 
 export function provider<T>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: ValueProvider<T>
 ): ValueProviderBinding<T>;
 export function provider<T, D extends unknown[]>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: FactoryProvider<T, D>
 ): FactoryProviderBinding<T, D>;
 export function provider<T, U extends T, D extends unknown[]>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: ClassProvider<U, D>
 ): ClassProviderBinding<T, D>;
 export function provider<T, D extends unknown[]>(
-  token: Class<T, D>,
+  token: ClassConstructor<T, D>,
   provider: ImplicitClassProvider<T, D>
 ): ClassProviderBinding<T, D>;
 export function provider<T>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): ProviderBinding<T> {
   return {
@@ -105,29 +105,29 @@ export function provider<T>(
 }
 
 export function defaultProvider<T>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: ValueProvider<T>
-): Token<T>;
+): InjectionToken<T>;
 export function defaultProvider<T, D extends unknown[]>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: FactoryProvider<T, D>
-): Token<T>;
+): InjectionToken<T>;
 export function defaultProvider<T, U extends T, D extends unknown[]>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: ClassProvider<U, D>
-): Token<T>;
+): InjectionToken<T>;
 export function defaultProvider<T, D extends unknown[]>(
-  token: Class<T, D>,
+  token: ClassConstructor<T, D>,
   provider: ImplicitClassProvider<T, D>
-): Class<T, D>;
+): ClassConstructor<T, D>;
 export function defaultProvider<T>(
-  token: Token<T>,
+  token: InjectionToken<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
-): Token<T> {
+): InjectionToken<T> {
   DEFAULT_PROVIDERS.set(token, getProvider(token, provider));
   return token;
 }
 
-export function getDefaultProvider<T>(token: Token<T>): Provider<T> {
+export function getDefaultProvider<T>(token: InjectionToken<T>): Provider<T> {
   return DEFAULT_PROVIDERS.get(token) as Provider<T>;
 }
