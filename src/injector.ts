@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MULTI_PROVIDERS,
   getDefaultProvider,
   isClassProvider,
   isFactoryProvider,
@@ -6,11 +7,12 @@ import {
   Provider,
   ProviderBinding,
 } from './provider';
-import { InjectionToken } from './token';
+import { InjectionToken, MultiToken } from './token';
 import { InjectionOpts } from './injection-opts';
 import { dep, Deps, isDepWithOpts } from './deps';
 import { ResolvePath } from './resolve-path';
 import { CyclicDepsError, MissingProviderError } from './errors';
+import { MultiMap } from './multi-map';
 
 function missingProvider(
   path: ResolvePath,
@@ -41,35 +43,49 @@ function checkCycle<T>(
 }
 
 export class Injector {
-  readonly depth: number;
+  readonly depth: number =
+    this.parent !== undefined ? this.parent.depth + 1 : 0;
+
   private readonly providers = new Map<
     InjectionToken<unknown>,
     Provider<unknown>
   >();
   private readonly bindings = new Map<InjectionToken<unknown>, unknown>();
 
+  private readonly multiProviders = new MultiMap<
+    MultiToken<unknown>,
+    Provider<unknown>
+  >(this.depth === 0 ? DEFAULT_MULTI_PROVIDERS : undefined);
+  private readonly multiBindings = new MultiMap<MultiToken<unknown>, unknown>();
+
   constructor(
     providers: ProviderBinding<unknown>[] = [],
     private readonly parent?: Injector
   ) {
-    this.depth = this.parent !== undefined ? this.parent.depth + 1 : 0;
     this.bindings.set(Injector, this);
-    for (const provider of providers) {
-      this.providers.set(provider.token, provider.provider);
+    for (const { token, provider } of providers) {
+      if (token instanceof MultiToken) {
+        this.multiProviders.add(token, provider);
+      } else {
+        this.providers.set(token, provider);
+      }
     }
   }
 
-  get<T>(token: InjectionToken<T>): T;
   get<T>(
     token: InjectionToken<T>,
-    opts: InjectionOpts & { optional?: false }
+    opts?: InjectionOpts & { optional?: false }
   ): T;
   get<T>(
     token: InjectionToken<T>,
     opts: InjectionOpts & { optional: true }
   ): T | undefined;
   get<T>(token: InjectionToken<T>, opts: InjectionOpts = {}): T | undefined {
-    return this.resolve(token, opts, []);
+    if (token instanceof MultiToken) {
+      return (this.resolveAll(token) as unknown) as T;
+    } else {
+      return this.resolve(token, opts, []);
+    }
   }
 
   private resolve<T>(
@@ -132,6 +148,49 @@ export class Injector {
     ]);
     this.bindings.set(token, instance);
     return instance;
+  }
+
+  private resolveAll<T>(token: MultiToken<T>): T[] | undefined {
+    const instances: T[] = [];
+    instances.push(...this.getAllFromAncestors(token));
+    instances.push(...this.getAllFromSelf(token));
+    return instances;
+  }
+
+  private getAllFromAncestors<T>(token: MultiToken<T>): T[] {
+    return this.parent?.resolveAll(token) ?? [];
+  }
+
+  private getAllFromSelf<T>(token: MultiToken<T>): T[] {
+    const instances = this.multiBindings.get(token) as T[] | undefined;
+    if (instances !== undefined) {
+      return instances;
+    } else {
+      const providers = this.getMultiProviders(token);
+      if (providers !== undefined) {
+        return this.bindMultiInstances(token, providers, []);
+      } else {
+        return [];
+      }
+    }
+  }
+
+  private getMultiProviders<T>(
+    token: MultiToken<T>
+  ): Provider<T>[] | undefined {
+    return this.multiProviders.get(token) as Provider<T>[] | undefined;
+  }
+
+  private bindMultiInstances<T>(
+    token: MultiToken<T>,
+    providers: Provider<T>[],
+    path: ResolvePath
+  ): T[] {
+    const instances = providers.map((provider) =>
+      this.createInstance(provider, [...path, { token, injector: this }])
+    );
+    this.multiBindings.set(token, instances);
+    return instances;
   }
 
   private createInstance<T>(provider: Provider<T>, path: ResolvePath): T {

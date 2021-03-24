@@ -1,5 +1,5 @@
 import { Injector } from './injector';
-import { Token } from './token';
+import { MultiToken, Token } from './token';
 import { defaultProvider, provider } from './provider';
 import { dep } from './deps';
 
@@ -871,5 +871,40 @@ describe('Injector', () => {
         });
       });
     });
+  });
+
+  describe('multi', () => {
+    it('should resolve all', () => {
+      // given
+      const token = new MultiToken<string>('multi');
+      defaultProvider(token, { value: 'default1' });
+      defaultProvider(token, { value: 'default2' });
+      const parentInjector = new Injector([
+        provider(token, { value: 'parent1' }),
+        provider(token, { value: 'parent2' }),
+      ]);
+      const injector = new Injector(
+        [
+          provider(token, { value: 'self1' }),
+          provider(token, { value: 'self2' }),
+        ],
+        parentInjector
+      );
+
+      // when
+      const instances = injector.get(token);
+
+      // then
+      expect(instances).toEqual([
+        'default1',
+        'default2',
+        'parent1',
+        'parent2',
+        'self1',
+        'self2',
+      ]);
+    });
+    describe('from self', () => {});
+    describe('from ancestors', () => {});
   });
 });

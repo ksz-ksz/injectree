@@ -12,12 +12,9 @@ export {
   Provider,
   ProviderBinding,
   ValueProvider,
-  ValueProviderBinding,
   FactoryProvider,
-  FactoryProviderBinding,
   ClassProvider,
-  ClassProviderBinding,
   ImplicitClassProvider,
 } from './provider';
 export { ResolvePath } from './resolve-path';
-export { Token, InjectionToken } from './token';
+export { Token, MultiToken, InjectionToken } from './token';

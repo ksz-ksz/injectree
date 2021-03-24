@@ -1,6 +1,7 @@
 import { Class, ClassConstructor } from './class';
-import { Token, InjectionToken } from './token';
+import { Token, InjectionToken, MultiToken } from './token';
 import { Deps } from './deps';
+import { MultiMap } from './multi-map';
 
 export interface Provider<T> {}
 
@@ -27,21 +28,9 @@ export interface ProviderBinding<T> {
   provider: Provider<T>;
 }
 
-export interface ValueProviderBinding<T> extends ProviderBinding<T> {
-  token: InjectionToken<T>;
-  provider: ValueProvider<T>;
-}
-
-export interface ClassProviderBinding<T, D extends unknown[]>
-  extends ProviderBinding<T> {
-  token: ClassConstructor<T, D>;
-  provider: ClassProvider<T, D>;
-}
-
-export interface FactoryProviderBinding<T, D extends unknown[]>
-  extends ProviderBinding<T> {
-  token: InjectionToken<T>;
-  provider: FactoryProvider<T, D>;
+export interface MultiProviderBinding<T> {
+  token: MultiToken<T>;
+  provider: Provider<T>;
 }
 
 export function isValueProvider<T>(
@@ -62,7 +51,14 @@ export function isClassProvider<T>(
   return 'class' in provider;
 }
 
-const DEFAULT_PROVIDERS = new Map<InjectionToken<unknown>, Provider<unknown>>();
+export const DEFAULT_PROVIDERS = new Map<
+  InjectionToken<unknown>,
+  Provider<unknown>
+>();
+export const DEFAULT_MULTI_PROVIDERS = new MultiMap<
+  MultiToken<unknown>,
+  Provider<unknown>
+>();
 
 function getProvider<T>(
   token: Token<T> | Class<T>,
@@ -81,27 +77,43 @@ function getProvider<T>(
 export function provider<T>(
   token: InjectionToken<T>,
   provider: ValueProvider<T>
-): ValueProviderBinding<T>;
+): ProviderBinding<T>;
 export function provider<T, D extends unknown[]>(
   token: InjectionToken<T>,
   provider: FactoryProvider<T, D>
-): FactoryProviderBinding<T, D>;
+): ProviderBinding<T>;
 export function provider<T, U extends T, D extends unknown[]>(
   token: InjectionToken<T>,
   provider: ClassProvider<U, D>
-): ClassProviderBinding<T, D>;
+): ProviderBinding<T>;
 export function provider<T, D extends unknown[]>(
   token: ClassConstructor<T, D>,
   provider: ImplicitClassProvider<T, D>
-): ClassProviderBinding<T, D>;
+): ProviderBinding<T>;
+export function provider<T>(
+  token: MultiToken<T>,
+  provider: ValueProvider<T>
+): MultiProviderBinding<T>;
+export function provider<T, D extends unknown[]>(
+  token: MultiToken<T>,
+  provider: FactoryProvider<T, D>
+): MultiProviderBinding<T>;
+export function provider<T, U extends T, D extends unknown[]>(
+  token: MultiToken<T>,
+  provider: ClassProvider<U, D>
+): MultiProviderBinding<T>;
 export function provider<T>(
   token: InjectionToken<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
-): ProviderBinding<T> {
-  return {
-    token,
-    provider: getProvider(token, provider),
-  };
+): ProviderBinding<T> | MultiProviderBinding<T> {
+  if (token instanceof MultiToken) {
+    return { token, provider };
+  } else {
+    return {
+      token,
+      provider: getProvider(token, provider),
+    };
+  }
 }
 
 export function defaultProvider<T>(
@@ -121,10 +133,26 @@ export function defaultProvider<T, D extends unknown[]>(
   provider: ImplicitClassProvider<T, D>
 ): ClassConstructor<T, D>;
 export function defaultProvider<T>(
+  token: MultiToken<T>,
+  provider: ValueProvider<T>
+): InjectionToken<T>;
+export function defaultProvider<T, D extends unknown[]>(
+  token: MultiToken<T>,
+  provider: FactoryProvider<T, D>
+): InjectionToken<T>;
+export function defaultProvider<T, U extends T, D extends unknown[]>(
+  token: MultiToken<T>,
+  provider: ClassProvider<U, D>
+): InjectionToken<T>;
+export function defaultProvider<T>(
   token: InjectionToken<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): InjectionToken<T> {
-  DEFAULT_PROVIDERS.set(token, getProvider(token, provider));
+  if (token instanceof MultiToken) {
+    DEFAULT_MULTI_PROVIDERS.add(token, provider);
+  } else {
+    DEFAULT_PROVIDERS.set(token, getProvider(token, provider));
+  }
   return token;
 }
 
