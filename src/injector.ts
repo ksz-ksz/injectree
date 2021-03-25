@@ -1,6 +1,6 @@
 import {
   DEFAULT_MULTI_PROVIDERS,
-  getDefaultProvider,
+  DEFAULT_PROVIDERS,
   isClassProvider,
   isFactoryProvider,
   isValueProvider,
@@ -49,7 +49,7 @@ export class Injector {
   private readonly providers = new Map<
     InjectionToken<unknown>,
     Provider<unknown>
-  >();
+  >(this.depth === 0 ? DEFAULT_PROVIDERS : []);
   private readonly bindings = new Map<InjectionToken<unknown>, unknown>();
 
   private readonly multiProviders = new MultiMap<
@@ -111,18 +111,6 @@ export class Injector {
         } else if (from !== 'self') {
           if (this.parent !== undefined) {
             return this.parent.resolve(token, { optional }, path);
-          } else {
-            const defaultProvider = getDefaultProvider(token);
-            if (defaultProvider !== undefined) {
-              return this.bindInstance(token, defaultProvider, path);
-            } else {
-              return missingProvider(path, token, optional);
-            }
-          }
-        } else if (/* from === 'self' && */ this.depth === 0) {
-          const defaultProvider = getDefaultProvider(token);
-          if (defaultProvider !== undefined) {
-            return this.bindInstance(token, defaultProvider, path);
           } else {
             return missingProvider(path, token, optional);
           }

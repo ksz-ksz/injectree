@@ -55,6 +55,7 @@ export const DEFAULT_PROVIDERS = new Map<
   InjectionToken<unknown>,
   Provider<unknown>
 >();
+
 export const DEFAULT_MULTI_PROVIDERS = new MultiMap<
   MultiToken<unknown>,
   Provider<unknown>
@@ -154,8 +155,4 @@ export function defaultProvider<T>(
     DEFAULT_PROVIDERS.set(token, getProvider(token, provider));
   }
   return token;
-}
-
-export function getDefaultProvider<T>(token: InjectionToken<T>): Provider<T> {
-  return DEFAULT_PROVIDERS.get(token) as Provider<T>;
 }

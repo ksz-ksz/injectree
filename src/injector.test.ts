@@ -140,7 +140,6 @@ describe('Injector', () => {
       });
     });
   });
-
   describe('default provider', () => {
     it('should resolve', () => {
       // given
@@ -153,6 +152,20 @@ describe('Injector', () => {
 
       // then
       expect(instance).toBeInstanceOf(Service);
+    });
+    describe('defined after injector was created', () => {
+      it('should not resolve', () => {
+        // given
+        class Service {}
+        const injector = new Injector();
+        defaultProvider(Service, { deps: [] });
+
+        // when
+        const instance = injector.get(Service, { optional: true });
+
+        // then
+        expect(instance).toBeUndefined();
+      });
     });
 
     describe('with deps', () => {
@@ -238,6 +251,7 @@ describe('Injector', () => {
     it('should resolve', () => {
       // given
       const token = new Token('test');
+      defaultProvider(token, { value: 'DEFAULT' });
       const parentInjector = new Injector([
         provider(token, { value: 'PARENT' }),
       ]);
@@ -245,7 +259,6 @@ describe('Injector', () => {
         [provider(token, { value: 'SELF' })],
         parentInjector
       );
-      defaultProvider(token, { value: 'DEFAULT' });
 
       // when
       const instance = injector.get(token, { from: 'self' });
@@ -256,8 +269,8 @@ describe('Injector', () => {
     describe('root injector and default provider', () => {
       // given
       const token = new Token('test');
-      const injector = new Injector();
       defaultProvider(token, { value: 'DEFAULT' });
+      const injector = new Injector();
 
       // when
       const instance = injector.get(token, { from: 'self' });
@@ -269,11 +282,11 @@ describe('Injector', () => {
       it('should throw', () => {
         // given
         const token = new Token('test');
+        defaultProvider(token, { value: 'DEFAULT' });
         const parentInjector = new Injector([
           provider(token, { value: 'PARENT' }),
         ]);
         const injector = new Injector([], parentInjector);
-        defaultProvider(token, { value: 'DEFAULT' });
         const e = (): void => {
           // when
           injector.get(token, { from: 'self' });
@@ -286,11 +299,11 @@ describe('Injector', () => {
         it('should return undefined', () => {
           // given
           const token = new Token('test');
+          defaultProvider(token, { value: 'DEFAULT' });
           const parentInjector = new Injector([
             provider(token, { value: 'PARENT' }),
           ]);
           const injector = new Injector([], parentInjector);
-          defaultProvider(token, { value: 'DEFAULT' });
 
           // when
           const instance = injector.get(token, {
@@ -311,6 +324,10 @@ describe('Injector', () => {
         }
         const dep1Token = new Token<string>('dep1');
         const dep2Token = new Token<string>('dep2');
+        defaultProvider(Service, {
+          factory: () => new Service('default', 'default'),
+          deps: [],
+        });
         const parentInjector = new Injector([
           provider(dep1Token, { value: 'DEP1' }),
         ]);
@@ -323,10 +340,6 @@ describe('Injector', () => {
           ],
           parentInjector
         );
-        defaultProvider(Service, {
-          factory: () => new Service('default', 'default'),
-          deps: [],
-        });
 
         // when
         const instance = injector.get(Service, { from: 'self' });
