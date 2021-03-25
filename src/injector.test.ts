@@ -917,7 +917,60 @@ describe('Injector', () => {
         'self2',
       ]);
     });
-    describe('from self', () => {});
-    describe('from ancestors', () => {});
+    describe('from self', () => {
+      it('should resolve from self', () => {
+        // given
+        const token = new MultiToken<string>('multi');
+        defaultProvider(token, { value: 'default1' });
+        defaultProvider(token, { value: 'default2' });
+        const parentInjector = new Injector([
+          provider(token, { value: 'parent1' }),
+          provider(token, { value: 'parent2' }),
+        ]);
+        const injector = new Injector(
+          [
+            provider(token, { value: 'self1' }),
+            provider(token, { value: 'self2' }),
+          ],
+          parentInjector
+        );
+
+        // when
+        const instances = injector.get(token, { from: 'self' });
+
+        // then
+        expect(instances).toEqual(['self1', 'self2']);
+      });
+    });
+    describe('from ancestors', () => {
+      it('should resolve ancestors', () => {
+        // given
+        const token = new MultiToken<string>('multi');
+        defaultProvider(token, { value: 'default1' });
+        defaultProvider(token, { value: 'default2' });
+        const parentInjector = new Injector([
+          provider(token, { value: 'parent1' }),
+          provider(token, { value: 'parent2' }),
+        ]);
+        const injector = new Injector(
+          [
+            provider(token, { value: 'self1' }),
+            provider(token, { value: 'self2' }),
+          ],
+          parentInjector
+        );
+
+        // when
+        const instances = injector.get(token, { from: 'ancestors' });
+
+        // then
+        expect(instances).toEqual([
+          'default1',
+          'default2',
+          'parent1',
+          'parent2',
+        ]);
+      });
+    });
   });
 });

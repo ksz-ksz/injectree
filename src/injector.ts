@@ -82,7 +82,7 @@ export class Injector {
   ): T | undefined;
   get<T>(token: InjectionToken<T>, opts: InjectionOpts = {}): T | undefined {
     if (token instanceof MultiToken) {
-      return (this.resolveAll(token) as unknown) as T;
+      return (this.resolveAll(token, opts) as unknown) as T;
     } else {
       return this.resolve(token, opts, []);
     }
@@ -138,15 +138,29 @@ export class Injector {
     return instance;
   }
 
-  private resolveAll<T>(token: MultiToken<T>): T[] | undefined {
+  private resolveAll<T>(
+    token: MultiToken<T>,
+    { optional = false, from = 'self-and-ancestors' }: InjectionOpts
+  ): T[] | undefined {
     const instances: T[] = [];
-    instances.push(...this.getAllFromAncestors(token));
-    instances.push(...this.getAllFromSelf(token));
+    switch (from) {
+      case 'self':
+        instances.push(...this.getAllFromSelf(token));
+        break;
+      case 'ancestors':
+        instances.push(...this.getAllFromAncestors(token));
+        break;
+      case 'self-and-ancestors':
+        instances.push(...this.getAllFromAncestors(token));
+        instances.push(...this.getAllFromSelf(token));
+        break;
+    }
+
     return instances;
   }
 
   private getAllFromAncestors<T>(token: MultiToken<T>): T[] {
-    return this.parent?.resolveAll(token) ?? [];
+    return this.parent?.resolveAll(token, { optional: true }) ?? [];
   }
 
   private getAllFromSelf<T>(token: MultiToken<T>): T[] {
