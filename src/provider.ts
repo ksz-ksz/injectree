@@ -3,18 +3,21 @@ import { Token, InjectionToken, MultiToken } from './token';
 import { Deps } from './deps';
 import { MultiMap } from './multi-map';
 
-export interface Provider<T> {}
+export type Provider<T> =
+  | ValueProvider<T>
+  | FactoryProvider<T, unknown[]>
+  | ClassProvider<T, unknown[]>;
 
-export interface ValueProvider<T> extends Provider<T> {
+export interface ValueProvider<T> {
   value: T;
 }
 
-export interface FactoryProvider<T, D extends unknown[]> extends Provider<T> {
+export interface FactoryProvider<T, D extends unknown[]> {
   deps: Deps<D>;
   factory: (...args: D) => T;
 }
 
-export interface ClassProvider<T, D extends unknown[]> extends Provider<T> {
+export interface ClassProvider<T, D extends unknown[]> {
   deps: Deps<D>;
   class: ClassConstructor<T, D>;
 }
@@ -108,7 +111,7 @@ export function provider<T>(
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): ProviderBinding<T> | MultiProviderBinding<T> {
   if (token instanceof MultiToken) {
-    return { token, provider };
+    return { token, provider: provider as Provider<T> };
   } else {
     return {
       token,
@@ -150,7 +153,7 @@ export function defaultProvider<T>(
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): InjectionToken<T> {
   if (token instanceof MultiToken) {
-    DEFAULT_MULTI_PROVIDERS.add(token, provider);
+    DEFAULT_MULTI_PROVIDERS.add(token, provider as Provider<T>);
   } else {
     DEFAULT_PROVIDERS.set(token, getProvider(token, provider));
   }

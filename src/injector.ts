@@ -210,16 +210,14 @@ export class Injector {
   }
 
   private createInstance<T>(provider: Provider<T>, path: ResolvePath): T {
-    if (isValueProvider(provider)) {
-      return provider.value;
+    if (isClassProvider(provider)) {
+      const deps = this.resolveDeps(provider.deps, path);
+      return new provider.class(...deps);
     } else if (isFactoryProvider(provider)) {
       const deps = this.resolveDeps(provider.deps, path);
       return provider.factory(...deps);
-    } else if (isClassProvider(provider)) {
-      const deps = this.resolveDeps(provider.deps, path);
-      return new provider.class(...deps);
     } else {
-      throw new Error();
+      return provider.value;
     }
   }
 
