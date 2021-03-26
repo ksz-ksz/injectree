@@ -920,6 +920,26 @@ describe('Injector', () => {
         'self2',
       ]);
     });
+    describe('existing binding', () => {
+      it('should resolve to existing instances', () => {
+        // given
+        class A {}
+        class B {}
+        const token = new MultiToken<A | B>('multi');
+        const injector = new Injector([
+          provider(token, { class: A, deps: [] }),
+          provider(token, { class: B, deps: [] }),
+        ]);
+        const [firstA, firstB] = injector.get(token);
+
+        // when
+        const [secondA, secondB] = injector.get(token);
+
+        // then
+        expect(secondA).toBe(firstA);
+        expect(secondB).toBe(firstB);
+      });
+    });
     describe('missing provider', () => {
       it('should throw', () => {
         // given
