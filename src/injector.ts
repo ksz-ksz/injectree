@@ -81,14 +81,22 @@ export class Injector {
     opts: InjectionOpts & { optional: true }
   ): T | undefined;
   get<T>(token: InjectionToken<T>, opts: InjectionOpts = {}): T | undefined {
-    if (token instanceof MultiToken) {
-      return (this.resolveAll(token, opts) as unknown) as T;
-    } else {
-      return this.resolve(token, opts, []);
-    }
+    return this.resolve(token, opts, []);
   }
 
   private resolve<T>(
+    token: InjectionToken<T>,
+    opts: InjectionOpts,
+    path: ResolvePath
+  ): T | undefined {
+    if (token instanceof MultiToken) {
+      return (this.resolveMany(token, opts, path) as unknown) as T;
+    } else {
+      return this.resolveOne(token, opts, path);
+    }
+  }
+
+  private resolveOne<T>(
     token: InjectionToken<T>,
     { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
     path: ResolvePath
@@ -138,39 +146,45 @@ export class Injector {
     return instance;
   }
 
-  private resolveAll<T>(
+  private resolveMany<T>(
     token: MultiToken<T>,
-    { optional = false, from = 'self-and-ancestors' }: InjectionOpts
+    { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
+    path: ResolvePath
   ): T[] | undefined {
+    checkCycle(path, token, this);
     const instances: T[] = [];
     switch (from) {
       case 'self':
-        instances.push(...this.getAllFromSelf(token));
+        instances.push(...this.getAllFromSelf(token, path));
         break;
       case 'ancestors':
-        instances.push(...this.getAllFromAncestors(token));
+        instances.push(...this.getAllFromAncestors(token, path));
         break;
       case 'self-and-ancestors':
-        instances.push(...this.getAllFromAncestors(token));
-        instances.push(...this.getAllFromSelf(token));
+        instances.push(...this.getAllFromAncestors(token, path));
+        instances.push(...this.getAllFromSelf(token, path));
         break;
     }
 
-    return instances;
+    if (instances.length !== 0) {
+      return instances;
+    } else {
+      return missingProvider([], token, optional);
+    }
   }
 
-  private getAllFromAncestors<T>(token: MultiToken<T>): T[] {
-    return this.parent?.resolveAll(token, { optional: true }) ?? [];
+  private getAllFromAncestors<T>(token: MultiToken<T>, path: ResolvePath): T[] {
+    return this.parent?.resolveMany(token, { optional: true }, path) ?? [];
   }
 
-  private getAllFromSelf<T>(token: MultiToken<T>): T[] {
+  private getAllFromSelf<T>(token: MultiToken<T>, path: ResolvePath): T[] {
     const instances = this.multiBindings.get(token) as T[] | undefined;
     if (instances !== undefined) {
       return instances;
     } else {
       const providers = this.getMultiProviders(token);
       if (providers !== undefined) {
-        return this.bindMultiInstances(token, providers, []);
+        return this.bindMultiInstances(token, providers, path);
       } else {
         return [];
       }

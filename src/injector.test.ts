@@ -803,7 +803,10 @@ describe('Injector', () => {
         });
       });
     });
-    describe('short cyclic dependency', () => {
+  });
+
+  describe('cyclic deps', () => {
+    describe('self reference', () => {
       it('should throw', () => {
         // given
         class Service {
@@ -820,7 +823,7 @@ describe('Injector', () => {
         expect(e).toThrow(`cyclic deps: Service@0 → Service@0`);
       });
     });
-    describe('long cyclic dependency', () => {
+    describe('long cycle', () => {
       it('should throw', () => {
         // given
         class A {
@@ -917,6 +920,35 @@ describe('Injector', () => {
         'self2',
       ]);
     });
+    describe('missing provider', () => {
+      it('should throw', () => {
+        // given
+        const token = new MultiToken<string>('multi');
+        const injector = new Injector([]);
+
+        // when
+        const e = (): void => {
+          injector.get(token);
+        };
+
+        // then
+        expect(e).toThrow('missing provider: multi');
+      });
+
+      describe('optional', () => {
+        it('should return undefined', () => {
+          // given
+          const token = new MultiToken<string>('multi');
+          const injector = new Injector([]);
+
+          // when
+          const instances = injector.get(token, { optional: true });
+
+          // then
+          expect(instances).toBeUndefined();
+        });
+      });
+    });
     describe('from self', () => {
       it('should resolve from self', () => {
         // given
@@ -941,9 +973,53 @@ describe('Injector', () => {
         // then
         expect(instances).toEqual(['self1', 'self2']);
       });
+      describe('missing provider in self', () => {
+        it('should throw', () => {
+          // given
+          const token = new MultiToken<string>('multi');
+          defaultProvider(token, { value: 'default1' });
+          defaultProvider(token, { value: 'default2' });
+          const parentInjector = new Injector([
+            provider(token, { value: 'parent1' }),
+            provider(token, { value: 'parent2' }),
+          ]);
+          const injector = new Injector([], parentInjector);
+
+          // when
+          const e = (): void => {
+            injector.get(token, { from: 'self' });
+          };
+
+          // then
+          expect(e).toThrow('missing provider: multi');
+        });
+
+        describe('optional', () => {
+          it('should return undefined', () => {
+            // given
+            const token = new MultiToken<string>('multi');
+            defaultProvider(token, { value: 'default1' });
+            defaultProvider(token, { value: 'default2' });
+            const parentInjector = new Injector([
+              provider(token, { value: 'parent1' }),
+              provider(token, { value: 'parent2' }),
+            ]);
+            const injector = new Injector([], parentInjector);
+
+            // when
+            const instances = injector.get(token, {
+              from: 'self',
+              optional: true,
+            });
+
+            // then
+            expect(instances).toBeUndefined();
+          });
+        });
+      });
     });
     describe('from ancestors', () => {
-      it('should resolve ancestors', () => {
+      it('should resolve from ancestors', () => {
         // given
         const token = new MultiToken<string>('multi');
         defaultProvider(token, { value: 'default1' });
@@ -970,6 +1046,185 @@ describe('Injector', () => {
           'parent1',
           'parent2',
         ]);
+      });
+      describe('missing provider in ancestors', () => {
+        it('should throw', () => {
+          // given
+          const token = new MultiToken<string>('multi');
+          const parentInjector = new Injector([]);
+          const injector = new Injector(
+            [
+              provider(token, { value: 'self1' }),
+              provider(token, { value: 'self2' }),
+            ],
+            parentInjector
+          );
+
+          // when
+          const e = (): void => {
+            injector.get(token, { from: 'ancestors' });
+          };
+
+          // then
+          expect(e).toThrow('missing provider: multi');
+        });
+
+        describe('optional', () => {
+          it('should return undefined', () => {
+            // given
+            const token = new MultiToken<string>('multi');
+            const parentInjector = new Injector([]);
+            const injector = new Injector(
+              [
+                provider(token, { value: 'self1' }),
+                provider(token, { value: 'self2' }),
+              ],
+              parentInjector
+            );
+
+            // when
+            const instances = injector.get(token, {
+              from: 'ancestors',
+              optional: true,
+            });
+
+            // then
+            expect(instances).toBeUndefined();
+          });
+        });
+      });
+
+      describe('missing parent', () => {
+        it('should throw', () => {
+          // given
+          const token = new MultiToken<string>('multi');
+          defaultProvider(token, { value: 'default1' });
+          defaultProvider(token, { value: 'default2' });
+          const injector = new Injector([
+            provider(token, { value: 'self1' }),
+            provider(token, { value: 'self2' }),
+          ]);
+
+          // when
+          const e = (): void => {
+            injector.get(token, { from: 'ancestors' });
+          };
+
+          // then
+          expect(e).toThrow('missing provider: multi');
+        });
+
+        describe('optional', () => {
+          it('should return undefined', () => {
+            // given
+            const token = new MultiToken<string>('multi');
+            defaultProvider(token, { value: 'default1' });
+            defaultProvider(token, { value: 'default2' });
+            const injector = new Injector([
+              provider(token, { value: 'self1' }),
+              provider(token, { value: 'self2' }),
+            ]);
+
+            // when
+            const instances = injector.get(token, {
+              from: 'ancestors',
+              optional: true,
+            });
+
+            // then
+            expect(instances).toBeUndefined();
+          });
+        });
+      });
+    });
+    describe('cyclic deps', () => {
+      describe('self reference', () => {
+        it('should throw', () => {
+          // given
+          const token = new MultiToken<Service>('multi');
+          class Service {
+            constructor(readonly dep: Service[]) {}
+          }
+          const injector = new Injector([
+            provider(token, { class: Service, deps: [token] }),
+          ]);
+
+          const e = (): void => {
+            // when
+            injector.get(token);
+          };
+
+          // then
+          expect(e).toThrow(`cyclic deps: multi@0 → multi@0`);
+        });
+      });
+      describe('long cycle', () => {
+        it('should throw', () => {
+          // given
+          const token = new MultiToken<A>('token');
+          class A {
+            constructor(readonly b: B) {}
+          }
+          class B {
+            constructor(readonly c: C) {}
+          }
+          class C {
+            constructor(readonly a: A[]) {}
+          }
+          const injector = new Injector([
+            provider(token, { class: A, deps: [B] }),
+            provider(B, { deps: [C] }),
+            provider(C, { class: C, deps: [token] }),
+          ]);
+
+          const e = (): void => {
+            // when
+            injector.get(token);
+          };
+
+          // then
+          expect(e).toThrow(`cyclic deps: token@0 → B@0 → C@0 → token@0`);
+        });
+
+        describe('with path', () => {
+          it('should throw', () => {
+            // given
+            class X {
+              constructor(readonly y: Y) {}
+            }
+            class Y {
+              constructor(readonly a: A[]) {}
+            }
+
+            const token = new MultiToken<A>('token');
+            class A {
+              constructor(readonly b: B) {}
+            }
+            class B {
+              constructor(readonly c: C) {}
+            }
+            class C {
+              constructor(readonly a: A[]) {}
+            }
+            const injector = new Injector([
+              provider(X, { deps: [Y] }),
+              provider(Y, { deps: [token] }),
+              provider(token, { class: A, deps: [B] }),
+              provider(B, { deps: [C] }),
+              provider(C, { class: C, deps: [token] }),
+            ]);
+
+            const e = (): void => {
+              // when
+              injector.get(X);
+            };
+
+            // then
+            expect(e).toThrow(
+              `cyclic deps: [X@0 → Y@0] token@0 → B@0 → C@0 → token@0`
+            );
+          });
+        });
       });
     });
   });
