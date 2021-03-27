@@ -5,6 +5,7 @@ export { InjectionOpts } from './injection-opts';
 export { Injector } from './injector';
 export {
   isValueProvider,
+  isTokenProvider,
   isFactoryProvider,
   isClassProvider,
   provider,

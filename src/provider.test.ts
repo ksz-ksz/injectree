@@ -1,6 +1,7 @@
 import {
   isClassProvider,
   isFactoryProvider,
+  isTokenProvider,
   isValueProvider,
   provider,
   Provider,
@@ -19,6 +20,11 @@ const tests: Test[] = [
     description: 'value provider',
     provider: { value: 42 },
     is: isValueProvider,
+  },
+  {
+    description: 'token provider',
+    provider: { token: Test },
+    is: isTokenProvider,
   },
   {
     description: 'factory provider',

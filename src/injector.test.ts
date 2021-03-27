@@ -95,6 +95,43 @@ describe('Injector', () => {
     });
   });
 
+  describe('token provider', () => {
+    it('should resolve', () => {
+      // given
+      class Service {}
+      const token = new Token<Service>('token');
+      const injector = new Injector([
+        provider(Service, { deps: [] }),
+        provider(token, { token: Service }),
+      ]);
+
+      // when
+      const instance = injector.get(token);
+
+      // then
+      expect(instance).toBeInstanceOf(Service);
+    });
+
+    describe('binding already exists', () => {
+      it('should resolve', () => {
+        // given
+        class Service {}
+        const token = new Token<Service>('token');
+        const injector = new Injector([
+          provider(Service, { deps: [] }),
+          provider(token, { token: Service }),
+        ]);
+        const service = injector.get(Service);
+
+        // when
+        const instance = injector.get(token);
+
+        // then
+        expect(instance).toBe(service);
+      });
+    });
+  });
+
   describe('abstract class provider', () => {
     it('should resolve', () => {
       // given

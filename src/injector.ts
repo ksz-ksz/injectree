@@ -3,6 +3,7 @@ import {
   DEFAULT_PROVIDERS,
   isClassProvider,
   isFactoryProvider,
+  isTokenProvider,
   isValueProvider,
   Provider,
   ProviderBinding,
@@ -216,15 +217,17 @@ export class Injector {
     } else if (isFactoryProvider(provider)) {
       const deps = this.resolveDeps(provider.deps, path);
       return provider.factory(...deps);
+    } else if (isTokenProvider(provider)) {
+      return this.resolve(provider.token, {}, path) as T;
     } else {
       return provider.value;
     }
   }
 
-  private resolveDeps(deps: Deps<unknown[]>, chain: ResolvePath): unknown[] {
+  private resolveDeps(deps: Deps<unknown[]>, path: ResolvePath): unknown[] {
     return deps.map((x) => {
       const { token, opts } = isDepWithOpts(x) ? x : dep(x);
-      return this.resolve(token, opts, chain);
+      return this.resolve(token, opts, path);
     });
   }
 }

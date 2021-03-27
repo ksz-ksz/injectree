@@ -3,11 +3,6 @@ import { Token, InjectionToken, MultiToken } from './token';
 import { Deps } from './deps';
 import { MultiMap } from './multi-map';
 
-export type Provider<T> =
-  | ValueProvider<T>
-  | FactoryProvider<T, unknown[]>
-  | ClassProvider<T, unknown[]>;
-
 export interface ValueProvider<T> {
   value: T;
 }
@@ -21,6 +16,16 @@ export interface ClassProvider<T, D extends unknown[]> {
   deps: Deps<D>;
   class: ClassConstructor<T, D>;
 }
+
+export interface TokenProvider<T> {
+  token: InjectionToken<T>;
+}
+
+export type Provider<T> =
+  | ValueProvider<T>
+  | FactoryProvider<T, unknown[]>
+  | ClassProvider<T, unknown[]>
+  | TokenProvider<T>;
 
 export interface ImplicitClassProvider<T, D extends unknown[]> {
   deps: Deps<D>;
@@ -40,6 +45,12 @@ export function isValueProvider<T>(
   provider: Provider<T>
 ): provider is ValueProvider<T> {
   return 'value' in provider;
+}
+
+export function isTokenProvider<T>(
+  provider: Provider<T>
+): provider is TokenProvider<T> {
+  return 'token' in provider;
 }
 
 export function isFactoryProvider<T>(
@@ -68,7 +79,12 @@ function getProvider<T>(
   token: Token<T> | Class<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
 ): Provider<T> {
-  if ('value' in provider || 'factory' in provider || 'class' in provider) {
+  if (
+    'value' in provider ||
+    'token' in provider ||
+    'factory' in provider ||
+    'class' in provider
+  ) {
     return provider;
   } else {
     return {
@@ -81,6 +97,10 @@ function getProvider<T>(
 export function provider<T>(
   token: InjectionToken<T>,
   provider: ValueProvider<T>
+): ProviderBinding<T>;
+export function provider<T>(
+  token: InjectionToken<T>,
+  provider: TokenProvider<T>
 ): ProviderBinding<T>;
 export function provider<T, D extends unknown[]>(
   token: InjectionToken<T>,
@@ -97,6 +117,10 @@ export function provider<T, D extends unknown[]>(
 export function provider<T>(
   token: MultiToken<T>,
   provider: ValueProvider<T>
+): MultiProviderBinding<T>;
+export function provider<T>(
+  token: MultiToken<T>,
+  provider: TokenProvider<T>
 ): MultiProviderBinding<T>;
 export function provider<T, D extends unknown[]>(
   token: MultiToken<T>,
