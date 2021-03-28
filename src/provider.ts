@@ -31,12 +31,12 @@ export interface ImplicitClassProvider<T, D extends unknown[]> {
   deps: Deps<D>;
 }
 
-export interface ProviderBinding<T> {
+export interface ProviderDef<T> {
   token: InjectionToken<T>;
   provider: Provider<T>;
 }
 
-export interface MultiProviderBinding<T> {
+export interface MultiProviderDef<T> {
   token: MultiToken<T>;
   provider: Provider<T>;
 }
@@ -97,43 +97,43 @@ function getProvider<T>(
 export function provider<T>(
   token: InjectionToken<T>,
   provider: ValueProvider<T>
-): ProviderBinding<T>;
+): ProviderDef<T>;
 export function provider<T>(
   token: InjectionToken<T>,
   provider: TokenProvider<T>
-): ProviderBinding<T>;
+): ProviderDef<T>;
 export function provider<T, D extends unknown[]>(
   token: InjectionToken<T>,
   provider: FactoryProvider<T, D>
-): ProviderBinding<T>;
+): ProviderDef<T>;
 export function provider<T, U extends T, D extends unknown[]>(
   token: InjectionToken<T>,
   provider: ClassProvider<U, D>
-): ProviderBinding<T>;
+): ProviderDef<T>;
 export function provider<T, D extends unknown[]>(
   token: ClassConstructor<T, D>,
   provider: ImplicitClassProvider<T, D>
-): ProviderBinding<T>;
+): ProviderDef<T>;
 export function provider<T>(
   token: MultiToken<T>,
   provider: ValueProvider<T>
-): MultiProviderBinding<T>;
+): MultiProviderDef<T>;
 export function provider<T>(
   token: MultiToken<T>,
   provider: TokenProvider<T>
-): MultiProviderBinding<T>;
+): MultiProviderDef<T>;
 export function provider<T, D extends unknown[]>(
   token: MultiToken<T>,
   provider: FactoryProvider<T, D>
-): MultiProviderBinding<T>;
+): MultiProviderDef<T>;
 export function provider<T, U extends T, D extends unknown[]>(
   token: MultiToken<T>,
   provider: ClassProvider<U, D>
-): MultiProviderBinding<T>;
+): MultiProviderDef<T>;
 export function provider<T>(
   token: InjectionToken<T>,
   provider: Provider<T> | ImplicitClassProvider<T, unknown[]>
-): ProviderBinding<T> | MultiProviderBinding<T> {
+): ProviderDef<T> | MultiProviderDef<T> {
   if (token instanceof MultiToken) {
     return { token, provider: provider as Provider<T> };
   } else {

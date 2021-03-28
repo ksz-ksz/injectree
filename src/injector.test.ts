@@ -2,6 +2,7 @@ import { Injector } from './injector';
 import { MultiToken, Token } from './token';
 import { defaultProvider, provider } from './provider';
 import { dep } from './deps';
+import { onDestroy } from './destroy';
 
 describe('Injector', () => {
   describe('value provider', () => {
@@ -1282,6 +1283,127 @@ describe('Injector', () => {
             );
           });
         });
+      });
+    });
+  });
+
+  describe('destroy', () => {
+    describe('get called after destroy', () => {
+      it('should throw', () => {
+        // given
+        const token = new Token('token');
+        const injector = new Injector([provider(token, { value: 42 })]);
+        injector.get(token);
+        injector.destroy();
+
+        const e = (): void => {
+          // when
+          injector.get(token);
+        };
+
+        // then
+        expect(e).toThrow('Injector was destroyed');
+      });
+    });
+    describe('value provider', () => {
+      it('should destroy instance', () => {
+        // given
+        const events: string[] = [];
+        const token = new Token<{ test: string; [onDestroy](): void }>('token');
+        const injector = new Injector([
+          provider(token, {
+            value: {
+              test: 'TEST',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            },
+          }),
+        ]);
+        injector.get(token);
+
+        // when
+        injector.destroy();
+
+        // then
+        expect(events).toEqual([]);
+      });
+    });
+    describe('token provider', () => {
+      it('should not destroy instance', () => {
+        // given
+        const events: string[] = [];
+        const depToken = new Token<{ test: string; [onDestroy](): void }>(
+          'token'
+        );
+        const token = new Token<{ test: string; [onDestroy](): void }>('token');
+        const injector = new Injector([
+          provider(token, { token: depToken }),
+          provider(depToken, {
+            value: {
+              test: 'TEST',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            },
+          }),
+        ]);
+        injector.get(token);
+
+        // when
+        injector.destroy();
+
+        // then
+        expect(events).toEqual([]);
+      });
+    });
+    describe('factory provider', () => {
+      it('should destroy instance', () => {
+        // given
+        const events: string[] = [];
+        const token = new Token<{ test: string; [onDestroy](): void }>('token');
+        const injector = new Injector([
+          provider(token, {
+            factory: () => ({
+              test: 'TEST',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            }),
+            deps: [],
+          }),
+        ]);
+        injector.get(token);
+
+        // when
+        injector.destroy();
+
+        // then
+        expect(events).toEqual([]);
+      });
+    });
+    describe('class provider', () => {
+      it('should destroy instance', () => {
+        // given
+        const events: string[] = [];
+        class Service {
+          private test = 'TEST';
+          [onDestroy](): void {
+            events.push('destroy', this.test);
+          }
+        }
+        const injector = new Injector([
+          provider(Service, {
+            deps: [],
+          }),
+        ]);
+        injector.get(Service);
+
+        // when
+        injector.destroy();
+
+        // then
+        expect(events).toEqual(['destroy', 'TEST']);
       });
     });
   });

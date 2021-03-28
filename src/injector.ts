@@ -4,16 +4,20 @@ import {
   isClassProvider,
   isFactoryProvider,
   isTokenProvider,
-  isValueProvider,
   Provider,
-  ProviderBinding,
+  ProviderDef,
 } from './provider';
 import { InjectionToken, MultiToken } from './token';
 import { InjectionOpts } from './injection-opts';
 import { dep, Deps, isDepWithOpts } from './deps';
 import { ResolvePath } from './resolve-path';
-import { CyclicDepsError, MissingProviderError } from './errors';
+import {
+  CyclicDepsError,
+  InjectorDestroyedError,
+  MissingProviderError,
+} from './errors';
 import { MultiMap } from './multi-map';
+import { OnDestroy, onDestroy } from './destroy';
 
 function missingProvider(
   path: ResolvePath,
@@ -43,6 +47,44 @@ function checkCycle<T>(
   }
 }
 
+function checkDestroy(destroyed: boolean): void {
+  if (destroyed) {
+    throw new InjectorDestroyedError();
+  }
+}
+
+function isDestroyableProvider(provider: Provider<unknown>): boolean {
+  return isClassProvider(provider);
+}
+
+function isDestroyableInstance(instance: any): instance is OnDestroy {
+  return (
+    instance !== null &&
+    typeof instance === 'object' &&
+    typeof instance[onDestroy] === 'function' // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+  );
+}
+
+function destroyBindings(bindings: {
+  forEach(callback: (binding: Binding) => void): void;
+}): void {
+  bindings.forEach(({ provider, instance }) => {
+    if (isDestroyableProvider(provider) && isDestroyableInstance(instance)) {
+      instance[onDestroy]();
+    }
+  });
+}
+
+interface Binding {
+  provider: Provider<unknown>;
+  instance: unknown;
+}
+
+interface MultiBinding {
+  bindings: Binding[];
+  instances: unknown[];
+}
+
 export class Injector {
   readonly depth: number =
     this.parent !== undefined ? this.parent.depth + 1 : 0;
@@ -51,19 +93,23 @@ export class Injector {
     InjectionToken<unknown>,
     Provider<unknown>
   >(this.depth === 0 ? DEFAULT_PROVIDERS : []);
-  private readonly bindings = new Map<InjectionToken<unknown>, unknown>();
+  private readonly bindings = new Map<InjectionToken<unknown>, Binding>();
 
   private readonly multiProviders = new MultiMap<
     MultiToken<unknown>,
     Provider<unknown>
   >(this.depth === 0 ? DEFAULT_MULTI_PROVIDERS : undefined);
-  private readonly multiBindings = new MultiMap<MultiToken<unknown>, unknown>();
+  private readonly multiBindings = new Map<MultiToken<unknown>, MultiBinding>();
+  private destroyed = false;
 
   constructor(
-    providers: ProviderBinding<unknown>[] = [],
+    providers: ProviderDef<unknown>[] = [],
     private readonly parent?: Injector
   ) {
-    this.bindings.set(Injector, this);
+    this.bindings.set(Injector, {
+      provider: { token: Injector },
+      instance: this,
+    });
     for (const { token, provider } of providers) {
       if (token instanceof MultiToken) {
         this.multiProviders.add(token, provider);
@@ -85,11 +131,21 @@ export class Injector {
     return this.resolve(token, opts, []);
   }
 
+  destroy(): void {
+    destroyBindings(this.bindings);
+    this.multiBindings.forEach((multiBinding) => {
+      destroyBindings(multiBinding.bindings);
+    });
+    this.destroyed = true;
+  }
+
   private resolve<T>(
     token: InjectionToken<T>,
     opts: InjectionOpts,
     path: ResolvePath
   ): T | undefined {
+    checkDestroy(this.destroyed);
+    checkCycle(path, token, this);
     if (token instanceof MultiToken) {
       return (this.resolveMany(token, opts, path) as unknown) as T;
     } else {
@@ -102,7 +158,6 @@ export class Injector {
     { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
     path: ResolvePath
   ): T | undefined {
-    checkCycle(path, token, this);
     if (from === 'ancestors') {
       if (this.parent !== undefined) {
         return this.parent.resolve(token, { optional }, path);
@@ -110,7 +165,7 @@ export class Injector {
         return missingProvider(path, token, optional);
       }
     } else {
-      const instance = this.bindings.get(token) as T | undefined;
+      const instance = this.bindings.get(token)?.instance as T | undefined;
       if (instance !== undefined) {
         return instance;
       } else {
@@ -143,7 +198,7 @@ export class Injector {
       ...path,
       { token, injector: this },
     ]);
-    this.bindings.set(token, instance);
+    this.bindings.set(token, { instance, provider });
     return instance;
   }
 
@@ -152,7 +207,6 @@ export class Injector {
     { optional = false, from = 'self-and-ancestors' }: InjectionOpts,
     path: ResolvePath
   ): T[] | undefined {
-    checkCycle(path, token, this);
     const instances: T[] = [];
     switch (from) {
       case 'self':
@@ -175,11 +229,13 @@ export class Injector {
   }
 
   private getAllFromAncestors<T>(token: MultiToken<T>, path: ResolvePath): T[] {
-    return this.parent?.resolveMany(token, { optional: true }, path) ?? [];
+    return this.parent?.resolve(token, { optional: true }, path) ?? [];
   }
 
   private getAllFromSelf<T>(token: MultiToken<T>, path: ResolvePath): T[] {
-    const instances = this.multiBindings.get(token) as T[] | undefined;
+    const instances = this.multiBindings.get(token)?.instances as
+      | T[]
+      | undefined;
     if (instances !== undefined) {
       return instances;
     } else {
@@ -203,10 +259,15 @@ export class Injector {
     providers: Provider<T>[],
     path: ResolvePath
   ): T[] {
-    const instances = providers.map((provider) =>
-      this.createInstance(provider, [...path, { token, injector: this }])
-    );
-    this.multiBindings.set(token, instances);
+    const bindings = providers.map((provider) => ({
+      provider,
+      instance: this.createInstance(provider, [
+        ...path,
+        { token, injector: this },
+      ]),
+    }));
+    const instances = bindings.map((binding) => binding.instance);
+    this.multiBindings.set(token, { bindings, instances });
     return instances;
   }
 

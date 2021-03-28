@@ -23,3 +23,9 @@ export class CyclicDepsError extends Error {
     );
   }
 }
+
+export class InjectorDestroyedError extends Error {
+  constructor() {
+    super('Injector was destroyed');
+  }
+}
