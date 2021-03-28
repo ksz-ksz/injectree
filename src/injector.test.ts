@@ -1406,5 +1406,62 @@ describe('Injector', () => {
         expect(events).toEqual(['destroy', 'TEST']);
       });
     });
+    describe('multi', () => {
+      it('should destroy class instance only', () => {
+        // given
+        const events: string[] = [];
+        const token = new MultiToken<{ test: string; [onDestroy](): void }>(
+          'token'
+        );
+        const depToken = new Token<{ test: string; [onDestroy](): void }>(
+          'dep'
+        );
+        class Service {
+          test = 'CLASS';
+          [onDestroy](): void {
+            events.push('destroy', this.test);
+          }
+        }
+        const injector = new Injector([
+          provider(token, {
+            class: Service,
+            deps: [],
+          }),
+          provider(token, { token: depToken }),
+          provider(token, {
+            factory: () => ({
+              test: 'FACTORY',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            }),
+            deps: [],
+          }),
+          provider(token, {
+            value: {
+              test: 'VALUE',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            },
+          }),
+          provider(depToken, {
+            value: {
+              test: 'TOKEN',
+              [onDestroy](): void {
+                events.push('destroy', this.test);
+              },
+            },
+          }),
+        ]);
+        injector.get(token);
+
+        // when
+        injector.destroy();
+
+        // then
+        expect(events).toEqual(['destroy', 'CLASS']);
+      });
+    });
   });
 });
