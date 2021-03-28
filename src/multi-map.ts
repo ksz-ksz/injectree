@@ -8,10 +8,6 @@ export class MultiMap<K, V> {
     return this.map.get(key);
   }
 
-  set(key: K, vals: V[]): void {
-    this.map.set(key, vals);
-  }
-
   add(key: K, val: V): void {
     const vals = this.map.get(key);
     if (vals !== undefined) {
